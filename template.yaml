@@ -19,6 +19,13 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${function80778FF8.Arn}/invocations
               responses: {}
+          /submit:
+            post:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${functionB26DEC32.Arn}/invocations
+              responses: {}
       EndpointConfiguration: REGIONAL
   function80778FF8:
     Type: AWS::Serverless::Function
@@ -44,6 +51,53 @@ Resources:
             RestApiId: !Ref apiE0AB840E
     Metadata:
       StackeryName: getForm
+  functionB26DEC32:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-functionB26DEC32
+      Description: !Sub
+        - Stackery Stack ${StackeryStackTagName} Environment ${StackeryEnvironmentTagName} Function ${ResourceName}
+        - ResourceName: handleSubmit
+      CodeUri: src/handleSubmit
+      Handler: index.handler
+      Runtime: nodejs8.10
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Ref tableE1B41252
+      Events:
+        apiE0AB840E:
+          Type: Api
+          Properties:
+            Path: /submit
+            Method: POST
+            RestApiId: !Ref apiE0AB840E
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref tableE1B41252
+          TABLE_ARN: !GetAtt tableE1B41252.Arn
+    Metadata:
+      StackeryName: handleSubmit
+  tableE1B41252:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      TableName: !Sub ${AWS::StackName}-tableE1B41252
+    Metadata:
+      StackeryName: SignUps
 Parameters:
   StackeryStackTagName:
     Type: String
