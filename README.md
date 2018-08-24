@@ -1,4 +1,4 @@
-# Newsletter Signup Example
+# Serverless Newsletter Signup Form Example
 ## AWS Lambda newsletter signup form application
 
 This repository is part of Stackery's [Newsletter Signup Form Tutorial](https://docs.stackery.io/tutorials/newsletter-signup/introduction), which will teach users to build and deploy a serverless newsletter signup form.
