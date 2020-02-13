@@ -1,6 +1,9 @@
 {
+  "name": "getform",
+  "version": "1.0.0",
   "private": true,
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "aws-sdk": "~2"
   }
 }

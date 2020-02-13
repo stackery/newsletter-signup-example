@@ -1,87 +1,61 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Resources:
-  apiE0AB840E:
-    Type: AWS::Serverless::Api
-    Properties:
-      Name: !Sub
-        - ${ResourceName} From Stackery Stack ${StackeryStackTagName} Environment ${StackeryEnvironmentTagName}
-        - ResourceName: apiE0AB840E
-      StageName: !Ref StackeryEnvironmentAPIGatewayStageName
-      DefinitionBody:
-        swagger: '2.0'
-        info: {}
-        paths:
-          /newsletter-form:
-            get:
-              x-amazon-apigateway-integration:
-                httpMethod: POST
-                type: aws_proxy
-                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${function80778FF8.Arn}/invocations
-              responses: {}
-          /submit:
-            post:
-              x-amazon-apigateway-integration:
-                httpMethod: POST
-                type: aws_proxy
-                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${functionB26DEC32.Arn}/invocations
-              responses: {}
-      EndpointConfiguration: REGIONAL
-  function80778FF8:
+  getForm:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackName}-function80778FF8
+      FunctionName: !Sub ${AWS::StackName}-getForm
       Description: !Sub
         - Stackery Stack ${StackeryStackTagName} Environment ${StackeryEnvironmentTagName} Function ${ResourceName}
         - ResourceName: getForm
       CodeUri: src/getForm
       Handler: index.handler
-      Runtime: nodejs8.10
+      Runtime: nodejs12.x
       MemorySize: 3008
       Timeout: 30
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
       Events:
-        apiE0AB840E:
+        Api:
           Type: Api
           Properties:
             Path: /newsletter-form
             Method: GET
-            RestApiId: !Ref apiE0AB840E
+            RestApiId: !Ref Api
     Metadata:
       StackeryName: getForm
-  functionB26DEC32:
+  handleSubmit:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackName}-functionB26DEC32
+      FunctionName: !Sub ${AWS::StackName}-handleSubmit
       Description: !Sub
         - Stackery Stack ${StackeryStackTagName} Environment ${StackeryEnvironmentTagName} Function ${ResourceName}
         - ResourceName: handleSubmit
       CodeUri: src/handleSubmit
       Handler: index.handler
-      Runtime: nodejs8.10
+      Runtime: nodejs12.x
       MemorySize: 3008
       Timeout: 30
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
         - DynamoDBCrudPolicy:
-            TableName: !Ref tableE1B41252
+            TableName: !Ref Signups
       Events:
-        apiE0AB840E:
+        Api:
           Type: Api
           Properties:
             Path: /submit
             Method: POST
-            RestApiId: !Ref apiE0AB840E
+            RestApiId: !Ref Api
       Environment:
         Variables:
-          TABLE_NAME: !Ref tableE1B41252
-          TABLE_ARN: !GetAtt tableE1B41252.Arn
+          TABLE_NAME: !Ref Signups
+          TABLE_ARN: !GetAtt Signups.Arn
     Metadata:
       StackeryName: handleSubmit
-  tableE1B41252:
+  Signups:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
@@ -95,9 +69,37 @@ Resources:
         WriteCapacityUnits: 5
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
-      TableName: !Sub ${AWS::StackName}-tableE1B41252
+      TableName: !Sub ${AWS::StackName}-Signups
     Metadata:
       StackeryName: SignUps
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub
+        - ${ResourceName} From Stackery Stack ${StackeryStackTagName} Environment ${StackeryEnvironmentTagName}
+        - ResourceName: formApi
+      StageName: !Ref StackeryEnvironmentAPIGatewayStageName
+      DefinitionBody:
+        swagger: '2.0'
+        info: {}
+        paths:
+          /newsletter-form:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getForm.Arn}/invocations
+              responses: {}
+          /submit:
+            post:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${handleSubmit.Arn}/invocations
+              responses: {}
+      EndpointConfiguration: REGIONAL
+    Metadata:
+      StackeryName: formApi
 Parameters:
   StackeryStackTagName:
     Type: String
